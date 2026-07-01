@@ -161,6 +161,19 @@ type RelayInfo struct {
 	// *bytes.Reader/Buffer/strings.Reader). 0 means "let net/http decide".
 	UpstreamRequestBodySize int64
 
+	OriginalPrompt         string
+	RequestPrompt          string
+	ModelResponse          string
+	OriginalPromptFile     string
+	RequestPromptFile      string
+	ModelResponseFile      string
+	OriginalPromptMedia    []byte
+	RequestPromptMedia     []byte
+	ModelResponseMedia     []byte
+	OriginalPromptMediaTag string
+	RequestPromptMediaTag  string
+	ModelResponseMediaTag  string
+
 	PriceData types.PriceData
 
 	// TieredBillingSnapshot is a frozen snapshot of tiered billing rules

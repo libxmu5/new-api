@@ -104,6 +104,17 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 				logger.LogDebug(c, "requestBody: %s", debugBytes)
 			}
 		}
+		if common.DetailedLogEnabled {
+			if requestBytes, bErr := storage.Bytes(); bErr == nil {
+				if common.DetailedLogTextEnabled {
+					info.RequestPrompt = string(requestBytes)
+				}
+				if common.DetailedLogMediaEnabled {
+					info.RequestPromptMedia = requestBytes
+					info.RequestPromptMediaTag = "request-prompt"
+				}
+			}
+		}
 		requestBody = common.ReaderOnly(storage)
 	} else {
 		convertedRequest, err := adaptor.ConvertOpenAIRequest(c, info, request)
@@ -174,6 +185,15 @@ func TextHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *types
 		}
 
 		logger.LogDebug(c, "text request body: %s", jsonData)
+		if common.DetailedLogEnabled {
+			if common.DetailedLogTextEnabled {
+				info.RequestPrompt = string(jsonData)
+			}
+			if common.DetailedLogMediaEnabled {
+				info.RequestPromptMedia = jsonData
+				info.RequestPromptMediaTag = "request-prompt"
+			}
+		}
 
 		body, size, closer, err := relaycommon.NewOutboundJSONBody(jsonData)
 		if err != nil {

@@ -1394,6 +1394,9 @@ func geminiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http
 		}
 	}
 
+	if common.DetailedLogEnabled && common.DetailedLogTextEnabled {
+		info.ModelResponse = responseText.String()
+	}
 	return usage, nil
 }
 
@@ -1508,6 +1511,9 @@ func GeminiChatHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.R
 	}
 	service.CloseResponseBodyGracefully(resp)
 	logger.LogDebug(c, "Gemini response body: %s", responseBody)
+	if common.DetailedLogEnabled && common.DetailedLogTextEnabled {
+		info.ModelResponse = string(responseBody)
+	}
 	var geminiResponse dto.GeminiChatResponse
 	err = common.Unmarshal(responseBody, &geminiResponse)
 	if err != nil {

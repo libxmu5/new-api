@@ -122,6 +122,20 @@ func Relay(c *gin.Context, relayFormat types.RelayFormat) {
 		newAPIError = types.NewError(err, types.ErrorCodeGenRelayInfoFailed)
 		return
 	}
+	if common.DetailedLogEnabled {
+		if storage, storageErr := common.GetBodyStorage(c); storageErr == nil {
+			if bodyBytes, bytesErr := storage.Bytes(); bytesErr == nil {
+				if common.DetailedLogTextEnabled {
+					relayInfo.OriginalPrompt = string(bodyBytes)
+				}
+				if common.DetailedLogMediaEnabled {
+					relayInfo.OriginalPromptMedia = bodyBytes
+					relayInfo.OriginalPromptMediaTag = "original-prompt"
+				}
+			}
+			_, _ = storage.Seek(0, io.SeekStart)
+		}
+	}
 
 	needSensitiveCheck := setting.ShouldCheckPromptSensitive()
 	needCountToken := constant.CountToken

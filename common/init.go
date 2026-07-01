@@ -81,6 +81,11 @@ func InitEnv() {
 	// Initialize variables from constants.go that were using environment variables
 	DebugEnabled = os.Getenv("DEBUG") == "true"
 	MemoryCacheEnabled = os.Getenv("MEMORY_CACHE_ENABLED") == "true"
+	DetailedLogEnabled = os.Getenv("DETAILED_LOG_ENABLED") == "true"
+	DetailedLogTextEnabled = os.Getenv("DETAILED_LOG_TEXT_ENABLED") == "true"
+	DetailedLogMediaEnabled = os.Getenv("DETAILED_LOG_MEDIA_ENABLED") == "true"
+	DetailedLogMaxTextLength = GetEnvOrDefault("DETAILED_LOG_MAX_TEXT_LENGTH", 65535)
+	DetailedLogStoragePath = os.Getenv("DETAILED_LOG_STORAGE_PATH")
 	IsMasterNode = os.Getenv("NODE_TYPE") != "slave"
 	NodeName = os.Getenv("NODE_NAME")
 	TLSInsecureSkipVerify = GetEnvOrDefaultBool("TLS_INSECURE_SKIP_VERIFY", false)

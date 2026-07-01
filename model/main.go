@@ -264,6 +264,7 @@ func migrateDB() error {
 		&Redemption{},
 		&Ability{},
 		&Log{},
+		&DetailedLog{},
 		&Midjourney{},
 		&TopUp{},
 		&QuotaData{},
@@ -313,6 +314,7 @@ func migrateDBFast() error {
 		{&Redemption{}, "Redemption"},
 		{&Ability{}, "Ability"},
 		{&Log{}, "Log"},
+		{&DetailedLog{}, "DetailedLog"},
 		{&Midjourney{}, "Midjourney"},
 		{&TopUp{}, "TopUp"},
 		{&QuotaData{}, "QuotaData"},
@@ -368,11 +370,10 @@ func migrateDBFast() error {
 }
 
 func migrateLOGDB() error {
-	var err error
-	if err = LOG_DB.AutoMigrate(&Log{}); err != nil {
+	if err := LOG_DB.AutoMigrate(&Log{}); err != nil {
 		return err
 	}
-	return nil
+	return LOG_DB.AutoMigrate(&DetailedLog{})
 }
 
 type sqliteColumnDef struct {

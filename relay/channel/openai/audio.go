@@ -65,6 +65,10 @@ func OpenaiTTSHandler(c *gin.Context, resp *http.Response, info *relaycommon.Rel
 		}
 
 		// 写入响应到客户端
+		if common.DetailedLogEnabled && common.DetailedLogMediaEnabled {
+			info.ModelResponseMedia = bodyBytes
+			info.ModelResponseMediaTag = "model-response"
+		}
 		c.Writer.WriteHeaderNow()
 		_, err = c.Writer.Write(bodyBytes)
 		if err != nil {
@@ -120,6 +124,9 @@ func OpenaiSTTHandler(c *gin.Context, resp *http.Response, info *relaycommon.Rel
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return types.NewOpenAIError(err, types.ErrorCodeReadResponseBodyFailed, http.StatusInternalServerError), nil
+	}
+	if common.DetailedLogEnabled && common.DetailedLogTextEnabled {
+		info.ModelResponse = string(responseBody)
 	}
 	// 写入新的 response body
 	service.IOCopyBytesGracefully(c, resp, responseBody)

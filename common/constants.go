@@ -113,6 +113,11 @@ var DebugEnabled bool
 var MemoryCacheEnabled bool
 
 var LogConsumeEnabled = true
+var DetailedLogEnabled = false
+var DetailedLogTextEnabled = false
+var DetailedLogMediaEnabled = false
+var DetailedLogMaxTextLength = 65535
+var DetailedLogStoragePath = ""
 
 var TLSInsecureSkipVerify bool
 var InsecureTLSConfig = &tls.Config{InsecureSkipVerify: true}

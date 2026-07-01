@@ -27,6 +27,9 @@ func GeminiTextGenerationHandler(c *gin.Context, info *relaycommon.RelayInfo, re
 	}
 
 	logger.LogDebug(c, "Gemini native response body: %s", responseBody)
+	if common.DetailedLogEnabled && common.DetailedLogTextEnabled {
+		info.ModelResponse = string(responseBody)
+	}
 
 	// 解析为 Gemini 原生响应格式
 	var geminiResponse dto.GeminiChatResponse

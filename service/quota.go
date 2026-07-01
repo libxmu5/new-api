@@ -360,7 +360,7 @@ func PostAudioConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, u
 	if tieredResult != nil {
 		InjectTieredBillingInfo(other, relayInfo, tieredResult)
 	}
-	model.RecordConsumeLog(ctx, relayInfo.UserId, model.RecordConsumeLogParams{
+	logParams := model.RecordConsumeLogParams{
 		ChannelId:        relayInfo.ChannelId,
 		PromptTokens:     usage.PromptTokens,
 		CompletionTokens: usage.CompletionTokens,
@@ -373,7 +373,31 @@ func PostAudioConsumeQuota(ctx *gin.Context, relayInfo *relaycommon.RelayInfo, u
 		IsStream:         relayInfo.IsStream,
 		Group:            relayInfo.UsingGroup,
 		Other:            other,
-	})
+	}
+	model.RecordConsumeLog(ctx, relayInfo.UserId, logParams)
+	if common.DetailedLogEnabled {
+		model.RecordDetailedLog(ctx, relayInfo.UserId, model.RecordDetailedLogParams{
+			RecordConsumeLogParams: logParams,
+			OriginalPrompt:         relayInfo.OriginalPrompt,
+			RequestPrompt:          relayInfo.RequestPrompt,
+			ModelResponse:          relayInfo.ModelResponse,
+			OriginalPromptFilePath: relayInfo.OriginalPromptFile,
+			RequestPromptFilePath:  relayInfo.RequestPromptFile,
+			ModelResponseFilePath:  relayInfo.ModelResponseFile,
+			OriginalPromptMedia: &model.DetailedLogMedia{
+				Data:   relayInfo.OriginalPromptMedia,
+				Prefix: relayInfo.OriginalPromptMediaTag,
+			},
+			RequestPromptMedia: &model.DetailedLogMedia{
+				Data:   relayInfo.RequestPromptMedia,
+				Prefix: relayInfo.RequestPromptMediaTag,
+			},
+			ModelResponseMedia: &model.DetailedLogMedia{
+				Data:   relayInfo.ModelResponseMedia,
+				Prefix: relayInfo.ModelResponseMediaTag,
+			},
+		})
+	}
 	gopool.Go(func() {
 		perfmetrics.RecordRelaySample(relayInfo, true, int64(usage.CompletionTokens))
 	})

@@ -51,6 +51,17 @@ func ImageHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 		if err != nil {
 			return types.NewErrorWithStatusCode(err, types.ErrorCodeReadRequestBodyFailed, http.StatusBadRequest, types.ErrOptionWithSkipRetry())
 		}
+		if common.DetailedLogEnabled {
+			if requestBytes, bErr := storage.Bytes(); bErr == nil {
+				if common.DetailedLogTextEnabled {
+					info.RequestPrompt = string(requestBytes)
+				}
+				if common.DetailedLogMediaEnabled {
+					info.RequestPromptMedia = requestBytes
+					info.RequestPromptMediaTag = "request-prompt"
+				}
+			}
+		}
 		requestBody = common.ReaderOnly(storage)
 	} else {
 		convertedRequest, err := adaptor.ConvertImageRequest(c, info, *request)
@@ -77,6 +88,15 @@ func ImageHelper(c *gin.Context, info *relaycommon.RelayInfo) (newAPIError *type
 			}
 
 			logger.LogDebug(c, "image request body: %s", jsonData)
+			if common.DetailedLogEnabled {
+				if common.DetailedLogTextEnabled {
+					info.RequestPrompt = string(jsonData)
+				}
+				if common.DetailedLogMediaEnabled {
+					info.RequestPromptMedia = jsonData
+					info.RequestPromptMediaTag = "request-prompt"
+				}
+			}
 			body, size, closer, err := relaycommon.NewOutboundJSONBody(jsonData)
 			if err != nil {
 				return types.NewError(err, types.ErrorCodeConvertRequestFailed, types.ErrOptionWithSkipRetry())
