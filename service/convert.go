@@ -486,7 +486,8 @@ func StreamResponseOpenAI2Claude(openAIResponse *dto.ChatCompletionsStreamRespon
 			}
 			info.ClaudeConvertInfo.LastMessagesType = relaycommon.LastMessageTypeTools
 			base := info.ClaudeConvertInfo.ToolCallBaseIndex
-			maxOffset := info.ClaudeConvertInfo.ToolCallMaxIndexOffset
+			prevMaxOffset := info.ClaudeConvertInfo.ToolCallMaxIndexOffset
+			maxOffset := prevMaxOffset
 
 			for i, toolCall := range toolCalls {
 				offset := 0
@@ -494,9 +495,6 @@ func StreamResponseOpenAI2Claude(openAIResponse *dto.ChatCompletionsStreamRespon
 					offset = *toolCall.Index
 				} else {
 					offset = i
-				}
-				if offset > maxOffset {
-					maxOffset = offset
 				}
 				blockIndex := base + offset
 
@@ -512,6 +510,15 @@ func StreamResponseOpenAI2Claude(openAIResponse *dto.ChatCompletionsStreamRespon
 							Input: map[string]interface{}{},
 						},
 					})
+					if offset > maxOffset {
+						maxOffset = offset
+					}
+				} else if offset > prevMaxOffset {
+					// New tool call index without a name: skip the delta to avoid
+					// "Content block not found" (delta for an unstarted block).
+					// Some models send arguments before the name chunk; we drop
+					// those arguments rather than emit an invalid stream.
+					continue
 				}
 
 				if len(toolCall.Function.Arguments) > 0 {
