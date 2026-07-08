@@ -190,7 +190,7 @@ func OaiStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 	HandleFinalResponse(c, info, lastStreamData, responseId, createAt, model, systemFingerprint, usage, containStreamUsage)
 
 	logger.LogInfo(c, fmt.Sprintf(
-		"OaiStreamHandler final response: relay_mode=%d, relay_format=%d, last_stream_data=%s, accumulated_text=%q, model_response_len=%d",
+		"OaiStreamHandler final response: relay_mode=%d, relay_format=%s, last_stream_data=%s, accumulated_text=%q, model_response_len=%d",
 		info.RelayMode,
 		info.RelayFormat,
 		lastStreamData,

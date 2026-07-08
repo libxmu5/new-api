@@ -123,6 +123,14 @@ func (a *Adaptor) DoResponse(c *gin.Context, resp *http.Response, info *relaycom
 		fallthrough
 	case constant.RelayModeAudioTranscription:
 		err, usage = cfSTTHandler(c, info, resp)
+	default:
+		// Unknown RelayMode (e.g. Claude /v1/messages converted to OpenAI-compatible)
+		// falls back to chat completions handling to avoid returning nil usage.
+		if info.IsStream {
+			err, usage = cfStreamHandler(c, info, resp)
+		} else {
+			err, usage = cfHandler(c, info, resp)
+		}
 	}
 	return
 }
