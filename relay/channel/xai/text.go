@@ -74,6 +74,9 @@ func xAIStreamHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Re
 
 	helper.Done(c)
 	service.CloseResponseBodyGracefully(resp)
+	if common.DetailedLogEnabled && common.DetailedLogTextEnabled {
+		info.ModelResponse = responseTextBuilder.String()
+	}
 	return usage, nil
 }
 
@@ -83,6 +86,9 @@ func xAIHandler(c *gin.Context, info *relaycommon.RelayInfo, resp *http.Response
 	responseBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, types.NewError(err, types.ErrorCodeBadResponseBody)
+	}
+	if common.DetailedLogEnabled && common.DetailedLogTextEnabled {
+		info.ModelResponse = string(responseBody)
 	}
 	var xaiResponse ChatCompletionResponse
 	err = common.Unmarshal(responseBody, &xaiResponse)

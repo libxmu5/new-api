@@ -1,6 +1,7 @@
 package openai
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/QuantumNous/new-api/common"
@@ -91,7 +92,7 @@ func ProcessStreamResponse(streamResponse dto.ChatCompletionsStreamResponse, res
 	return nil
 }
 
-func processTokenData(relayMode int, data string, responseTextBuilder *strings.Builder, toolCount *int) error {
+func processTokenData(c *gin.Context, relayMode int, data string, responseTextBuilder *strings.Builder, toolCount *int) error {
 	switch relayMode {
 	case relayconstant.RelayModeChatCompletions:
 		var streamResponse dto.ChatCompletionsStreamResponse
@@ -105,6 +106,18 @@ func processTokenData(relayMode int, data string, responseTextBuilder *strings.B
 			return err
 		}
 		processCompletionsStreamResponse(streamResponse, responseTextBuilder)
+	default:
+		var chatStreamResponse dto.ChatCompletionsStreamResponse
+		if err := common.UnmarshalJsonStr(data, &chatStreamResponse); err == nil && len(chatStreamResponse.Choices) > 0 {
+			return ProcessStreamResponse(chatStreamResponse, responseTextBuilder, toolCount)
+		}
+		var completionsStreamResponse dto.CompletionsStreamResponse
+		if err := common.UnmarshalJsonStr(data, &completionsStreamResponse); err != nil {
+			return err
+		}
+		logger.LogInfo(c, fmt.Sprintf("default stream parsed as completions: completionsStreamResponse=%s, responseTextBuilder=%q", common.GetJsonString(completionsStreamResponse), responseTextBuilder.String()))
+		processCompletionsStreamResponse(completionsStreamResponse, responseTextBuilder)
+		
 	}
 	return nil
 }

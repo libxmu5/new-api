@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/QuantumNous/new-api/common"
 	"github.com/QuantumNous/new-api/logger"
@@ -16,9 +17,9 @@ import (
 
 type DetailedLog struct {
 	Log                `gorm:"embedded"`
-	OriginalPrompt     string `json:"original_prompt" gorm:"type:text"`
-	RequestPrompt      string `json:"request_prompt" gorm:"type:text"`
-	ModelResponse      string `json:"model_response" gorm:"type:text"`
+	OriginalPrompt     string `json:"original_prompt" gorm:"type:longtext"`
+	RequestPrompt      string `json:"request_prompt" gorm:"type:longtext"`
+	ModelResponse      string `json:"model_response" gorm:"type:longtext"`
 	OriginalPromptFile string `json:"original_prompt_file" gorm:"type:varchar(512);default:''"`
 	RequestPromptFile  string `json:"request_prompt_file" gorm:"type:varchar(512);default:''"`
 	ModelResponseFile  string `json:"model_response_file" gorm:"type:varchar(512);default:''"`
@@ -52,9 +53,27 @@ func truncateDetailedLogText(text string) string {
 	}
 	marker := "...(truncated)"
 	if maxLength <= len(marker) {
-		return text[:maxLength]
+		return truncateToValidUTF8(text, maxLength)
 	}
-	return text[:maxLength-len(marker)] + marker
+	cut := maxLength - len(marker)
+	return truncateToValidUTF8(text, cut) + marker
+}
+
+// truncateToValidUTF8 returns at most the first n bytes of s, backed up to the
+// nearest UTF-8 rune boundary so we never split a multi-byte character. A
+// mid-rune cut would leave an orphaned lead byte (e.g. \xE2 with no
+// continuation bytes) and MySQL rejects that with Error 1366.
+func truncateToValidUTF8(s string, n int) string {
+	if n <= 0 {
+		return ""
+	}
+	if len(s) <= n {
+		return s
+	}
+	for n > 0 && !utf8.RuneStart(s[n]) {
+		n--
+	}
+	return s[:n]
 }
 
 func saveDetailedLogMedia(media *DetailedLogMedia) string {
@@ -88,7 +107,15 @@ func RecordDetailedLog(c *gin.Context, userId int, params RecordDetailedLogParam
 	if !common.DetailedLogEnabled {
 		return
 	}
-	logger.LogInfo(c, fmt.Sprintf("record detailed log: userId=%d, params=%s", userId, common.GetJsonString(params.RecordConsumeLogParams)))
+	logger.LogInfo(c, fmt.Sprintf(
+		"record detailed log: userId=%d, params=%s, text_enabled=%t, original_prompt_len=%d, request_prompt_len=%d, model_response_len=%d",
+		userId,
+		common.GetJsonString(params.RecordConsumeLogParams),
+		common.DetailedLogTextEnabled,
+		len(params.OriginalPrompt),
+		len(params.RequestPrompt),
+		len(params.ModelResponse),
+	))
 	username := c.GetString("username")
 	requestId := c.GetString(common.RequestIdKey)
 	upstreamRequestId := c.GetString(common.UpstreamRequestIdKey)

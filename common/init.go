@@ -158,6 +158,17 @@ func initConstantEnv() {
 	// 异步任务超时时间（分钟），超过此时间未完成的任务将被标记为失败并退款。0 表示禁用。
 	constant.TaskTimeoutMinutes = GetEnvOrDefault("TASK_TIMEOUT_MINUTES", 1440)
 
+	// Re-read DetailedLog flags after godotenv.Load(".env").
+	// The init() function reads them before the .env file is loaded,
+	// so they must be re-initialized here.
+	DetailedLogEnabled = os.Getenv("DETAILED_LOG_ENABLED") == "true"
+	DetailedLogTextEnabled = os.Getenv("DETAILED_LOG_TEXT_ENABLED") == "true"
+	DetailedLogMediaEnabled = os.Getenv("DETAILED_LOG_MEDIA_ENABLED") == "true"
+	DetailedLogMaxTextLength = GetEnvOrDefault("DETAILED_LOG_MAX_TEXT_LENGTH", 65535)
+	if path := os.Getenv("DETAILED_LOG_STORAGE_PATH"); path != "" {
+		DetailedLogStoragePath = path
+	}
+
 	soraPatchStr := GetEnvOrDefaultString("TASK_PRICE_PATCH", "")
 	if soraPatchStr != "" {
 		var taskPricePatches []string
