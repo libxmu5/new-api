@@ -4518,6 +4518,24 @@
     "Zero retention": "Без хранения данных",
     "Zhipu": "Zhipu",
     "Zhipu V4": "Zhipu V4",
-    "Zoom": "Zoom"
+    "Zoom": "Zoom",
+    "All users": "All users",
+    "All keys": "All keys",
+    "All channels": "All channels",
+    "All models": "All models",
+    "Query": "Query",
+    "Calls": "Calls",
+    "Pie Chart": "Pie Chart",
+    "Usage Trend": "Usage Trend",
+    "Usage Breakdown": "Usage Breakdown",
+    "Usage Statistics": "Usage Statistics",
+    "Token Usage": "Token Usage",
+    "Total Calls": "Total Calls",
+    "Success Rate": "Success Rate",
+    "Failure": "Failure",
+    "Consumption in selected range": "Consumption in selected range",
+    "Successful calls ratio in selected range": "Successful calls ratio in selected range",
+    "Prompt Tokens": "Prompt Tokens",
+    "Completion Tokens": "Completion Tokens"
   }
 }

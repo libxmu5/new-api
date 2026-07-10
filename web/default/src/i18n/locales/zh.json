@@ -4518,6 +4518,24 @@
     "Zero retention": "零数据保留",
     "Zhipu": "智谱",
     "Zhipu V4": "智谱 V4",
-    "Zoom": "缩放"
+    "Zoom": "缩放",
+    "All users": "全部用户",
+    "All keys": "全部密钥",
+    "All channels": "全部渠道",
+    "All models": "全部模型",
+    "Query": "查询",
+    "Calls": "调用次数",
+    "Pie Chart": "饼图",
+    "Usage Trend": "用量趋势",
+    "Usage Breakdown": "用量分布",
+    "Usage Statistics": "调用统计",
+    "Token Usage": "Token 用量",
+    "Total Calls": "总调用次数",
+    "Success Rate": "成功率",
+    "Failure": "失败",
+    "Consumption in selected range": "所选时间范围内的消费",
+    "Successful calls ratio in selected range": "所选时间范围内的调用成功占比",
+    "Prompt Tokens": "提示 Token",
+    "Completion Tokens": "补全 Token"
   }
 }
