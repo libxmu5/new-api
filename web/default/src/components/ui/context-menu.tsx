@@ -20,7 +20,8 @@ For commercial licensing, please contact support@quantumnous.com
 
 import * as React from 'react'
 import { ContextMenu as ContextMenuPrimitive } from '@base-ui/react/context-menu'
-import { ArrowRight01Icon, Tick02Icon } from '@hugeicons/core-free-icons'
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon'
+import Tick02Icon from '@hugeicons/core-free-icons/Tick02Icon'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@/lib/utils'
 

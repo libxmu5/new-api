@@ -18,13 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 'use client'
 
-import {
-  CheckmarkCircle02Icon,
-  InformationCircleIcon,
-  Alert02Icon,
-  MultiplicationSignCircleIcon,
-  Loading03Icon,
-} from '@hugeicons/core-free-icons'
+import CheckmarkCircle02Icon from '@hugeicons/core-free-icons/CheckmarkCircle02Icon'
+import InformationCircleIcon from '@hugeicons/core-free-icons/InformationCircleIcon'
+import Alert02Icon from '@hugeicons/core-free-icons/Alert02Icon'
+import CancelCircleIcon from '@hugeicons/core-free-icons/CancelCircleIcon'
+import Loading03Icon from '@hugeicons/core-free-icons/Loading03Icon'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
 import { useTheme } from '@/context/theme-provider'
@@ -60,7 +58,7 @@ const Toaster = (props: ToasterProps) => {
         ),
         error: (
           <HugeiconsIcon
-            icon={MultiplicationSignCircleIcon}
+            icon={CancelCircleIcon}
             strokeWidth={2}
             className='size-4'
           />

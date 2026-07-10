@@ -19,7 +19,8 @@ For commercial licensing, please contact support@quantumnous.com
 'use client'
 
 import * as React from 'react'
-import { SearchIcon, Tick02Icon } from '@hugeicons/core-free-icons'
+import Search02Icon from '@hugeicons/core-free-icons/Search02Icon'
+import Tick02Icon from '@hugeicons/core-free-icons/Tick02Icon'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Command as CommandPrimitive } from 'cmdk'
 import { cn } from '@/lib/utils'
@@ -98,7 +99,7 @@ function CommandInput({
         />
         <InputGroupAddon>
           <HugeiconsIcon
-            icon={SearchIcon}
+            icon={Search02Icon}
             strokeWidth={2}
             className='size-4 shrink-0 opacity-50'
           />

@@ -21,12 +21,10 @@ For commercial licensing, please contact support@quantumnous.com
 import * as React from 'react'
 import { useMediaQuery } from '@/hooks'
 import { Select as SelectPrimitive } from '@base-ui/react/select'
-import {
-  UnfoldMoreIcon,
-  Tick02Icon,
-  ArrowUp01Icon,
-  ArrowDown01Icon,
-} from '@hugeicons/core-free-icons'
+import UnfoldMoreDownIcon from '@hugeicons/core-free-icons/UnfoldMoreDownIcon'
+import Tick02Icon from '@hugeicons/core-free-icons/Tick02Icon'
+import ArrowUp01Icon from '@hugeicons/core-free-icons/ArrowUp01Icon'
+import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@/lib/utils'
 
@@ -74,7 +72,7 @@ function SelectTrigger({
       <SelectPrimitive.Icon
         render={
           <HugeiconsIcon
-            icon={UnfoldMoreIcon}
+            icon={UnfoldMoreDownIcon}
             strokeWidth={2}
             className='text-muted-foreground pointer-events-none size-4'
           />

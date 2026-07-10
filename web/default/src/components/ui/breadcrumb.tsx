@@ -19,10 +19,8 @@ For commercial licensing, please contact support@quantumnous.com
 import * as React from 'react'
 import { mergeProps } from '@base-ui/react/merge-props'
 import { useRender } from '@base-ui/react/use-render'
-import {
-  ArrowRight01Icon,
-  MoreHorizontalCircle01Icon,
-} from '@hugeicons/core-free-icons'
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon'
+import MoreHorizontalCircle01Icon from '@hugeicons/core-free-icons/MoreHorizontalCircle01Icon'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@/lib/utils'
 

@@ -17,7 +17,7 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import * as React from 'react'
-import { UnfoldMoreIcon } from '@hugeicons/core-free-icons'
+import UnfoldMoreDownIcon from '@hugeicons/core-free-icons/UnfoldMoreDownIcon'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { cn } from '@/lib/utils'
 
@@ -46,7 +46,7 @@ function NativeSelect({
         {...props}
       />
       <HugeiconsIcon
-        icon={UnfoldMoreIcon}
+        icon={UnfoldMoreDownIcon}
         strokeWidth={2}
         className='text-muted-foreground pointer-events-none absolute top-1/2 right-2.5 size-4 -translate-y-1/2 select-none'
         aria-hidden='true'

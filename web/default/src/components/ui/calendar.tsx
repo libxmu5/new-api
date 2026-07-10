@@ -17,11 +17,9 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import * as React from 'react'
-import {
-  ArrowLeftIcon,
-  ArrowRightIcon,
-  ArrowDownIcon,
-} from '@hugeicons/core-free-icons'
+import ArrowLeft01Icon from '@hugeicons/core-free-icons/ArrowLeft01Icon'
+import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon'
+import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon'
 import { HugeiconsIcon } from '@hugeicons/react'
 import {
   DayPicker,
@@ -168,7 +166,7 @@ function Calendar({
           if (orientation === 'left') {
             return (
               <HugeiconsIcon
-                icon={ArrowLeftIcon}
+                icon={ArrowLeft01Icon}
                 strokeWidth={2}
                 className={cn('size-4', className)}
                 {...props}
@@ -179,7 +177,7 @@ function Calendar({
           if (orientation === 'right') {
             return (
               <HugeiconsIcon
-                icon={ArrowRightIcon}
+                icon={ArrowRight01Icon}
                 strokeWidth={2}
                 className={cn('size-4', className)}
                 {...props}
@@ -189,7 +187,7 @@ function Calendar({
 
           return (
             <HugeiconsIcon
-              icon={ArrowDownIcon}
+              icon={ArrowDown01Icon}
               strokeWidth={2}
               className={cn('size-4', className)}
               {...props}
