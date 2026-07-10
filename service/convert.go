@@ -257,6 +257,37 @@ func StreamResponseOpenAI2Claude(openAIResponse *dto.ChatCompletionsStreamRespon
 		return nil
 	}
 
+	common.SysLog(fmt.Sprintf(
+		"[StreamResponseOpenAI2Claude] send_count=%d choices=%d tool_calls=%v finish_reason=%v reasoning=%q content=%q usage=%v",
+		info.SendResponseCount,
+		len(openAIResponse.Choices),
+		func() bool {
+			if len(openAIResponse.Choices) > 0 {
+				return len(openAIResponse.Choices[0].Delta.ToolCalls) > 0
+			}
+			return false
+		}(),
+		func() string {
+			if len(openAIResponse.Choices) > 0 && openAIResponse.Choices[0].FinishReason != nil {
+				return *openAIResponse.Choices[0].FinishReason
+			}
+			return ""
+		}(),
+		func() string {
+			if len(openAIResponse.Choices) > 0 {
+				return openAIResponse.Choices[0].Delta.GetReasoningContent()
+			}
+			return ""
+		}(),
+		func() string {
+			if len(openAIResponse.Choices) > 0 {
+				return openAIResponse.Choices[0].Delta.GetContentString()
+			}
+			return ""
+		}(),
+		openAIResponse.Usage != nil,
+	))
+
 	var claudeResponses []*dto.ClaudeResponse
 	// stopOpenBlocks emits the required content_block_stop event(s) for the currently open block(s)
 	// according to Anthropic's SSE streaming state machine:
@@ -607,6 +638,15 @@ func StreamResponseOpenAI2Claude(openAIResponse *dto.ChatCompletionsStreamRespon
 			return claudeResponses
 		}
 	}
+
+	eventTypes := make([]string, len(claudeResponses))
+	for i, r := range claudeResponses {
+		eventTypes[i] = r.Type
+		if r.Index != nil {
+			eventTypes[i] = fmt.Sprintf("%s(idx=%d)", r.Type, *r.Index)
+		}
+	}
+	common.SysLog(fmt.Sprintf("[StreamResponseOpenAI2Claude] generated %d events: %v", len(claudeResponses), eventTypes))
 
 	return claudeResponses
 }
