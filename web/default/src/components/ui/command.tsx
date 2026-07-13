@@ -18,12 +18,11 @@ For commercial licensing, please contact support@quantumnous.com
 */
 'use client'
 
-import * as React from 'react'
-import Search02Icon from '@hugeicons/core-free-icons/Search02Icon'
-import Tick02Icon from '@hugeicons/core-free-icons/Tick02Icon'
+import { Search02Icon, Tick02Icon } from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Command as CommandPrimitive } from 'cmdk'
-import { cn } from '@/lib/utils'
+import * as React from 'react'
+
 import {
   Dialog,
   DialogContent,
@@ -32,6 +31,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { InputGroup, InputGroupAddon } from '@/components/ui/input-group'
+import { cn } from '@/lib/utils'
 
 function Command({
   className,

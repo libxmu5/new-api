@@ -25,6 +25,7 @@ import CancelCircleIcon from '@hugeicons/core-free-icons/CancelCircleIcon'
 import Loading03Icon from '@hugeicons/core-free-icons/Loading03Icon'
 import { HugeiconsIcon } from '@hugeicons/react'
 import { Toaster as Sonner, type ToasterProps } from 'sonner'
+
 import { useTheme } from '@/context/theme-provider'
 
 const Toaster = (props: ToasterProps) => {

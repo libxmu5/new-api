@@ -16,19 +16,22 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 For commercial licensing, please contact support@quantumnous.com
 */
-import * as React from 'react'
-import ArrowLeft01Icon from '@hugeicons/core-free-icons/ArrowLeft01Icon'
-import ArrowRight01Icon from '@hugeicons/core-free-icons/ArrowRight01Icon'
-import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon'
+import {
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ArrowDownIcon,
+} from '@hugeicons/core-free-icons'
 import { HugeiconsIcon } from '@hugeicons/react'
+import * as React from 'react'
 import {
   DayPicker,
   getDefaultClassNames,
   type DayButton,
   type Locale,
 } from 'react-day-picker'
-import { cn } from '@/lib/utils'
+
 import { Button, buttonVariants } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 function Calendar({
   className,
@@ -166,7 +169,7 @@ function Calendar({
           if (orientation === 'left') {
             return (
               <HugeiconsIcon
-                icon={ArrowLeft01Icon}
+                icon={ArrowLeftIcon}
                 strokeWidth={2}
                 className={cn('size-4', className)}
                 {...props}
@@ -177,7 +180,7 @@ function Calendar({
           if (orientation === 'right') {
             return (
               <HugeiconsIcon
-                icon={ArrowRight01Icon}
+                icon={ArrowRightIcon}
                 strokeWidth={2}
                 className={cn('size-4', className)}
                 {...props}
@@ -187,7 +190,7 @@ function Calendar({
 
           return (
             <HugeiconsIcon
-              icon={ArrowDown01Icon}
+              icon={ArrowDownIcon}
               strokeWidth={2}
               className={cn('size-4', className)}
               {...props}

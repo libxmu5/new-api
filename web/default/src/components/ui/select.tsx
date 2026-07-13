@@ -18,14 +18,15 @@ For commercial licensing, please contact support@quantumnous.com
 */
 'use client'
 
-import * as React from 'react'
-import { useMediaQuery } from '@/hooks'
 import { Select as SelectPrimitive } from '@base-ui/react/select'
 import UnfoldMoreDownIcon from '@hugeicons/core-free-icons/UnfoldMoreDownIcon'
 import Tick02Icon from '@hugeicons/core-free-icons/Tick02Icon'
 import ArrowUp01Icon from '@hugeicons/core-free-icons/ArrowUp01Icon'
 import ArrowDown01Icon from '@hugeicons/core-free-icons/ArrowDown01Icon'
 import { HugeiconsIcon } from '@hugeicons/react'
+import * as React from 'react'
+
+import { useMediaQuery } from '@/hooks'
 import { cn } from '@/lib/utils'
 
 const Select = SelectPrimitive.Root
@@ -157,7 +158,10 @@ function SelectItem({
       )}
       {...props}
     >
-      <SelectPrimitive.ItemText className='flex flex-1 shrink-0 gap-2 whitespace-nowrap'>
+      <SelectPrimitive.ItemText
+        data-slot='select-item-text'
+        className='flex flex-1 shrink-0 gap-2 whitespace-nowrap'
+      >
         {children}
       </SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator

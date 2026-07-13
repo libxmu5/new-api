@@ -119,9 +119,9 @@ func applyStatsFilter(tx *gorm.DB, f StatsFilter) *gorm.DB {
 // castToText renders a DB-specific cast of a column to a string type.
 func castToText(col string) string {
 	switch {
-	case common.UsingPostgreSQL:
+	case common.UsingMainDatabase(common.DatabaseTypePostgreSQL):
 		return col + "::text"
-	case common.UsingMySQL:
+	case common.UsingMainDatabase(common.DatabaseTypeMySQL):
 		return "CAST(" + col + " AS CHAR)"
 	default: // SQLite
 		return "CAST(" + col + " AS TEXT)"
@@ -132,7 +132,7 @@ func castToText(col string) string {
 // Week buckets are labeled with the date of their Monday.
 func bucketExpressions(granularity string) (string, string, error) {
 	switch {
-	case common.UsingPostgreSQL:
+	case common.UsingMainDatabase(common.DatabaseTypePostgreSQL):
 		switch granularity {
 		case "hour":
 			return `to_char(date_trunc('hour', to_timestamp(created_at)), 'YYYY-MM-DD HH24:00')`,
@@ -144,7 +144,7 @@ func bucketExpressions(granularity string) (string, string, error) {
 			return `to_char(date_trunc('week', to_timestamp(created_at)), 'YYYY-MM-DD')`,
 				`extract(epoch from date_trunc('week', to_timestamp(created_at)))::bigint`, nil
 		}
-	case common.UsingMySQL:
+	case common.UsingMainDatabase(common.DatabaseTypeMySQL):
 		switch granularity {
 		case "hour":
 			return `DATE_FORMAT(FROM_UNIXTIME(created_at), '%Y-%m-%d %H:00')`,
