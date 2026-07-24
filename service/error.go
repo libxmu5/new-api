@@ -91,6 +91,9 @@ func RelayErrorHandler(ctx context.Context, resp *http.Response, showBodyWhenFai
 		return
 	}
 	CloseResponseBodyGracefully(resp)
+	logger.LogDebug(ctx, "upstream response status: %d", resp.StatusCode)
+	logger.LogDebug(ctx, "upstream response headers: %s", common.GetJsonString(resp.Header))
+	logger.LogDebug(ctx, "upstream response body: %s", responseBody)
 	var errResponse dto.GeneralErrorResponse
 	responseBodyText := string(responseBody)
 	responseBodyPreview := common.LocalLogPreview(responseBodyText)

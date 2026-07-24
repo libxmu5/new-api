@@ -12,6 +12,7 @@ import (
 	"time"
 
 	common2 "github.com/QuantumNous/new-api/common"
+	appconstant "github.com/QuantumNous/new-api/constant"
 	"github.com/QuantumNous/new-api/logger"
 	"github.com/QuantumNous/new-api/relay/common"
 	"github.com/QuantumNous/new-api/relay/constant"
@@ -304,6 +305,30 @@ func applyHeaderOverrideToRequest(req *http.Request, headerOverride map[string]s
 	}
 }
 
+func maskedHeaderForLog(header http.Header) map[string][]string {
+	masked := make(map[string][]string, len(header))
+	for key, values := range header {
+		switch strings.ToLower(key) {
+		case "authorization", "api-key", "x-api-key", "x-goog-api-key", "proxy-authorization", "cookie", "set-cookie":
+			masked[key] = []string{"***"}
+		default:
+			masked[key] = values
+		}
+	}
+	return masked
+}
+
+func logUpstreamRequest(c *gin.Context, req *http.Request, info *common.RelayInfo, fullRequestURL string) {
+	if info == nil || req == nil {
+		return
+	}
+	if info.ApiType != appconstant.APITypeOpenAI {
+		return
+	}
+	logger.LogDebug(c, "upstream request url: %s", common.SanitizeURLForLog(fullRequestURL))
+	logger.LogDebug(c, "upstream request headers: %s", common2.GetJsonString(maskedHeaderForLog(req.Header)))
+}
+
 func DoApiRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody io.Reader) (*http.Response, error) {
 	fullRequestURL, err := a.GetRequestURL(info)
 	if err != nil {
@@ -327,6 +352,7 @@ func DoApiRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBody
 		return nil, err
 	}
 	applyHeaderOverrideToRequest(req, headerOverride)
+	logUpstreamRequest(c, req, info, fullRequestURL)
 	resp, err := doRequest(c, req, info)
 	if err != nil {
 		return nil, fmt.Errorf("do request failed: %w", err)
@@ -359,6 +385,7 @@ func DoFormRequest(a Adaptor, c *gin.Context, info *common.RelayInfo, requestBod
 		return nil, err
 	}
 	applyHeaderOverrideToRequest(req, headerOverride)
+	logUpstreamRequest(c, req, info, fullRequestURL)
 	resp, err := doRequest(c, req, info)
 	if err != nil {
 		return nil, fmt.Errorf("do request failed: %w", err)

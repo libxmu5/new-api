@@ -18,7 +18,12 @@ For commercial licensing, please contact support@quantumnous.com
 */
 import type { ISpec } from '@visactor/vchart'
 import { getCurrencyDisplay } from '@/lib/currency'
-import type { DistributionRow, StatsBucket, StatsMetric } from '../types'
+import type {
+  DistributionRow,
+  StatsBucket,
+  StatsMetric,
+  StatsTrendBucket,
+} from '../types'
 
 type TFunction = (key: string) => string
 
@@ -57,7 +62,7 @@ export function renderQuota(rawQuota: number, digits = 4): string {
   const symbol = 'symbol' in meta ? meta.symbol : '$'
   const value = usd * rate
   const fixed = value.toFixed(digits)
-  if (parseFloat(fixed) === 0 && rawQuota > 0 && value > 0) {
+  if (Number.parseFloat(fixed) === 0 && rawQuota > 0 && value > 0) {
     return symbol + Math.pow(10, -digits).toFixed(digits)
   }
   return symbol + fixed
@@ -199,6 +204,100 @@ interface DistributionSpecOptions {
   metric: StatsMetric
   variant: 'pie' | 'bar'
   t: TFunction
+}
+
+const TREND_OTHERS_KEY = '__others__'
+
+const TREND_DIMENSION_FALLBACK_COLORS = [
+  '#14b8a6',
+  '#64748b',
+  '#f59e0b',
+  '#2563eb',
+  '#e11d48',
+  '#7c3aed',
+  '#16a34a',
+  '#ea580c',
+  '#0ea5e9',
+  '#a855f7',
+] as const
+
+interface TrendDimensionSpecOptions {
+  series: StatsTrendBucket[]
+  metric: StatsMetric
+  chartType: 'bar' | 'area'
+  t: TFunction
+}
+
+export function buildTrendDimensionSpec(
+  options: TrendDimensionSpecOptions
+): ISpec {
+  const { series, metric, chartType, t } = options
+
+  const values = series
+    .map((item) => ({
+      bucket: item.bucket,
+      series:
+        item.key === TREND_OTHERS_KEY
+          ? t('Others')
+          : item.label || t('Unknown'),
+      value: metricValueOf(metric, item),
+    }))
+    .filter((item) => item.value > 0)
+
+  const colors = [
+    ...getThemeChartColors(),
+    ...TREND_DIMENSION_FALLBACK_COLORS,
+  ].slice(0, 10)
+  const isCost = metric === 'cost'
+  const formatValue = (v: number) => formatMetricValue(metric, v)
+
+  const spec = {
+    type: chartType,
+    data: [{ id: 'trend', values }],
+    xField: 'bucket',
+    yField: 'value',
+    seriesField: 'series',
+    stack: false,
+    height: 340,
+    color: colors,
+    legends: { visible: true, orient: 'bottom' },
+    ...(chartType === 'area'
+      ? {
+          area: { style: { fillOpacity: 0.18 } },
+          line: { style: { lineWidth: 2 } },
+          point: { style: { visible: false } },
+        }
+      : { bar: { style: {} } }),
+    axes: [
+      {
+        orient: 'left',
+        label: {
+          formatMethod: (v: unknown) =>
+            isCost ? renderQuota(Number(v), 2) : formatInt(Number(v)),
+        },
+      },
+      { orient: 'bottom', sampling: true },
+    ],
+    tooltip: {
+      dimension: {
+        content: {
+          key: (datum: Record<string, unknown> | undefined) =>
+            String(datum?.series ?? ''),
+          value: (datum: Record<string, unknown> | undefined) =>
+            formatValue(Number(datum?.value ?? 0)),
+        },
+      },
+      mark: {
+        content: {
+          key: (datum: Record<string, unknown> | undefined) =>
+            String(datum?.series ?? ''),
+          value: (datum: Record<string, unknown> | undefined) =>
+            formatValue(Number(datum?.value ?? 0)),
+        },
+      },
+    },
+  }
+  return spec as unknown as ISpec
 }
 
 export function buildDistributionSpec(options: DistributionSpecOptions): ISpec {

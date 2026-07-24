@@ -17,11 +17,16 @@ along with this program. If not, see <https://www.gnu.org/licenses/>.
 For commercial licensing, please contact support@quantumnous.com
 */
 import { api } from '@/lib/api'
-import type { StatisticsFilters, StatisticsResponse } from './types'
+import type {
+  StatisticsFilters,
+  StatisticsResponse,
+  StatsTrendDimension,
+} from './types'
 
 export async function getStatistics(
   filters: StatisticsFilters,
-  isAdmin: boolean
+  isAdmin: boolean,
+  trendDimension: StatsTrendDimension
 ): Promise<StatisticsResponse> {
   const params = new URLSearchParams()
   if (isAdmin) {
@@ -30,6 +35,7 @@ export async function getStatistics(
   }
   filters.tokenIds.forEach((v) => params.append('token_ids', v))
   filters.models.forEach((v) => params.append('model_names', v))
+  params.set('trend_dimension', trendDimension)
   if (filters.start) {
     params.set('start_timestamp', String(Math.floor(filters.start.getTime() / 1000)))
   }

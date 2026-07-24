@@ -21,7 +21,7 @@ import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { useIsAdmin } from '@/hooks/use-admin'
 import { SectionPageLayout } from '@/components/layout'
-import { type Option } from '@/components/multi-select'
+import type { Option } from '@/components/multi-select'
 import { FadeIn } from '@/components/page-transition'
 import { getStatistics } from './api'
 import { StatsBreakdown } from './components/stats-breakdown'
@@ -31,7 +31,7 @@ import {
 } from './components/stats-filter-bar'
 import { StatsSummaryCards } from './components/stats-summary-cards'
 import { StatsTrendChart } from './components/stats-trend-chart'
-import type { StatisticsFilters } from './types'
+import type { StatisticsFilters, StatsTrendDimension } from './types'
 
 export function Statistics() {
   const { t } = useTranslation()
@@ -39,6 +39,8 @@ export function Statistics() {
   const [filters, setFilters] = useState<StatisticsFilters>(() =>
     buildDefaultStatisticsFilters()
   )
+  const [trendDimension, setTrendDimension] =
+    useState<StatsTrendDimension>('total')
 
   const statisticsQuery = useQuery({
     queryKey: [
@@ -50,8 +52,9 @@ export function Statistics() {
       filters.models,
       filters.start?.getTime(),
       filters.end?.getTime(),
+      trendDimension,
     ],
-    queryFn: () => getStatistics(filters, isAdmin),
+    queryFn: () => getStatistics(filters, isAdmin, trendDimension),
     placeholderData: keepPreviousData,
   })
 
@@ -93,6 +96,10 @@ export function Statistics() {
           <FadeIn delay={0.1}>
             <StatsTrendChart
               series={data?.time_series ?? []}
+              trendSeries={data?.trend_series ?? []}
+              dimension={trendDimension}
+              onDimensionChange={setTrendDimension}
+              isAdmin={isAdmin}
               loading={loading}
             />
           </FadeIn>

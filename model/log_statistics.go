@@ -3,6 +3,7 @@ package model
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/QuantumNous/new-api/common"
 
@@ -24,6 +25,21 @@ type StatsFilter struct {
 type StatsBucket struct {
 	Bucket           string `json:"bucket"`
 	BucketUnix       int64  `json:"bucket_unix"`
+	Quota            int64  `json:"quota"`
+	PromptTokens     int64  `json:"prompt_tokens"`
+	CompletionTokens int64  `json:"completion_tokens"`
+	TotalCount       int64  `json:"total_count"`
+	SuccessCount     int64  `json:"success_count"`
+	FailureCount     int64  `json:"failure_count"`
+}
+
+// StatsTrendBucket is one row of the time-series aggregation grouped by a dimension entity.
+type StatsTrendBucket struct {
+	Bucket           string `json:"bucket"`
+	BucketUnix       int64  `json:"bucket_unix"`
+	Dimension        string `json:"dimension"`
+	Key              string `json:"key" gorm:"column:dim_key"`
+	Label            string `json:"label"`
 	Quota            int64  `json:"quota"`
 	PromptTokens     int64  `json:"prompt_tokens"`
 	CompletionTokens int64  `json:"completion_tokens"`
@@ -56,10 +72,12 @@ type StatsTotals struct {
 
 // StatisticsResult is the full payload returned by the statistics endpoint.
 type StatisticsResult struct {
-	Totals        StatsTotals                  `json:"totals"`
-	TimeSeries    []StatsBucket                `json:"time_series"`
-	Distributions map[string][]DistributionRow `json:"distributions"`
-	Granularity   string                       `json:"granularity"`
+	Totals         StatsTotals                  `json:"totals"`
+	TimeSeries     []StatsBucket                `json:"time_series"`
+	TrendSeries    []StatsTrendBucket           `json:"trend_series"`
+	TrendDimension string                       `json:"trend_dimension"`
+	Distributions  map[string][]DistributionRow `json:"distributions"`
+	Granularity    string                       `json:"granularity"`
 }
 
 // AutoGranularity picks a reasonable bucket size given the time range:
@@ -217,25 +235,32 @@ func GetStatisticsTotals(filter StatsFilter) (StatsTotals, error) {
 	return totals, nil
 }
 
-// GetStatisticsDistribution groups by the requested dimension and returns top-N rows ordered by quota desc.
+// dimensionExpressions returns (labelExpr, keyExpr, groupExpr) for a breakdown dimension.
 // Supported dimensions: user, token, channel, model.
+func dimensionExpressions(dimension string) (string, string, string, error) {
+	switch dimension {
+	case "user":
+		return "username", castToText("user_id"), "user_id, username", nil
+	case "token":
+		return "token_name", castToText("token_id"), "token_id, token_name", nil
+	case "channel":
+		return castToText("channel_id"), castToText("channel_id"), "channel_id", nil
+	case "model":
+		return "model_name", "model_name", "model_name", nil
+	default:
+		return "", "", "", fmt.Errorf("unsupported dimension: %s", dimension)
+	}
+}
+
+// GetStatisticsDistribution groups by the requested dimension and returns top-N rows ordered by quota desc.
 func GetStatisticsDistribution(filter StatsFilter, dimension string, limit int) ([]DistributionRow, error) {
 	if limit <= 0 {
 		limit = 10
 	}
 
-	var labelExpr, keyExpr, groupExpr string
-	switch dimension {
-	case "user":
-		labelExpr, keyExpr, groupExpr = "username", castToText("user_id"), "user_id, username"
-	case "token":
-		labelExpr, keyExpr, groupExpr = "token_name", castToText("token_id"), "token_id, token_name"
-	case "channel":
-		labelExpr, keyExpr, groupExpr = castToText("channel_id"), castToText("channel_id"), "channel_id"
-	case "model":
-		labelExpr, keyExpr, groupExpr = "model_name", "model_name", "model_name"
-	default:
-		return nil, fmt.Errorf("unsupported dimension: %s", dimension)
+	labelExpr, keyExpr, groupExpr, err := dimensionExpressions(dimension)
+	if err != nil {
+		return nil, err
 	}
 
 	selectClause := fmt.Sprintf("%s AS label, %s AS dim_key,%s", labelExpr, keyExpr, statsMetricsSelect)
@@ -251,7 +276,13 @@ func GetStatisticsDistribution(filter StatsFilter, dimension string, limit int) 
 
 	var channelNames map[string]string
 	if dimension == "channel" {
-		channelNames = getChannelNamesByIdStrings(rows)
+		keys := make([]string, 0, len(rows))
+		for _, r := range rows {
+			if r.Key != "" {
+				keys = append(keys, r.Key)
+			}
+		}
+		channelNames = channelNamesByKeys(keys)
 	}
 	for i := range rows {
 		rows[i].TotalCount = rows[i].SuccessCount + rows[i].FailureCount
@@ -267,13 +298,7 @@ func GetStatisticsDistribution(filter StatsFilter, dimension string, limit int) 
 	return rows, nil
 }
 
-func getChannelNamesByIdStrings(rows []DistributionRow) map[string]string {
-	ids := make([]string, 0, len(rows))
-	for _, r := range rows {
-		if r.Key != "" {
-			ids = append(ids, r.Key)
-		}
-	}
+func channelNamesByKeys(ids []string) map[string]string {
 	result := make(map[string]string, len(ids))
 	if len(ids) == 0 {
 		return result
@@ -292,11 +317,125 @@ func getChannelNamesByIdStrings(rows []DistributionRow) map[string]string {
 	return result
 }
 
-// GetStatistics returns the full statistics payload: totals + time series + four dimension distributions.
-func GetStatistics(filter StatsFilter, granularity string) (StatisticsResult, error) {
+// trendTopSeriesLimit caps the number of per-entity series in the trend chart;
+// entities beyond the top-N (by quota) are folded into a single "Others" series.
+const trendTopSeriesLimit = 8
+
+// TrendOthersKey is the sentinel key for the aggregated "Others" trend series.
+const TrendOthersKey = "__others__"
+
+func normalizeTrendDimension(dimension string) string {
+	switch dimension {
+	case "user", "token", "channel", "model":
+		return dimension
+	default:
+		return "total"
+	}
+}
+
+// GetStatisticsTrendSeries returns the per-bucket aggregation grouped by the requested
+// trend dimension. Entities outside the top-N by quota are folded into an "Others" series.
+func GetStatisticsTrendSeries(filter StatsFilter, granularity string, trendDimension string) ([]StatsTrendBucket, error) {
+	dimension := normalizeTrendDimension(trendDimension)
+	if dimension == "total" {
+		series, err := GetStatisticsTimeSeries(filter, granularity)
+		if err != nil {
+			return nil, err
+		}
+		rows := make([]StatsTrendBucket, 0, len(series))
+		for _, item := range series {
+			rows = append(rows, StatsTrendBucket{
+				Bucket:           item.Bucket,
+				BucketUnix:       item.BucketUnix,
+				Dimension:        "total",
+				Key:              "total",
+				Label:            "Total",
+				Quota:            item.Quota,
+				PromptTokens:     item.PromptTokens,
+				CompletionTokens: item.CompletionTokens,
+				TotalCount:       item.TotalCount,
+				SuccessCount:     item.SuccessCount,
+				FailureCount:     item.FailureCount,
+			})
+		}
+		return rows, nil
+	}
+
+	topRows, err := GetStatisticsDistribution(filter, dimension, trendTopSeriesLimit)
+	if err != nil {
+		return nil, err
+	}
+	topLabels := make(map[string]string, len(topRows))
+	for _, row := range topRows {
+		topLabels[row.Key] = row.Label
+	}
+
+	g := normalizeGranularity(granularity, filter.StartUnix, filter.EndUnix)
+	bucketLabelExpr, bucketUnixExpr, err := bucketExpressions(g)
+	if err != nil {
+		return nil, err
+	}
+	dimLabelExpr, dimKeyExpr, dimGroupExpr, err := dimensionExpressions(dimension)
+	if err != nil {
+		return nil, err
+	}
+
+	selectClause := fmt.Sprintf("%s AS bucket, %s AS bucket_unix, %s AS label, %s AS dim_key,%s",
+		bucketLabelExpr, bucketUnixExpr, dimLabelExpr, dimKeyExpr, statsMetricsSelect)
+	tx := LOG_DB.Table("logs").Select(selectClause, LogTypeConsume, LogTypeError)
+	tx = applyStatsFilter(tx, filter)
+	tx = tx.Group(fmt.Sprintf("%s, %s, %s", bucketLabelExpr, bucketUnixExpr, dimGroupExpr)).Order("bucket_unix asc")
+
+	var rows []StatsTrendBucket
+	if err := tx.Scan(&rows).Error; err != nil {
+		common.SysError("failed to query statistics trend series: " + err.Error())
+		return nil, errors.New("查询趋势统计失败")
+	}
+
+	kept := make([]StatsTrendBucket, 0, len(rows))
+	others := make(map[int64]*StatsTrendBucket)
+	for i := range rows {
+		row := rows[i]
+		row.Dimension = dimension
+		row.TotalCount = row.SuccessCount + row.FailureCount
+		if label, ok := topLabels[row.Key]; ok {
+			row.Label = label
+			kept = append(kept, row)
+			continue
+		}
+		agg, ok := others[row.BucketUnix]
+		if !ok {
+			agg = &StatsTrendBucket{
+				Bucket:     row.Bucket,
+				BucketUnix: row.BucketUnix,
+				Dimension:  dimension,
+				Key:        TrendOthersKey,
+				Label:      "Others",
+			}
+			others[row.BucketUnix] = agg
+		}
+		agg.Quota += row.Quota
+		agg.PromptTokens += row.PromptTokens
+		agg.CompletionTokens += row.CompletionTokens
+		agg.SuccessCount += row.SuccessCount
+		agg.FailureCount += row.FailureCount
+		agg.TotalCount += row.TotalCount
+	}
+	for _, agg := range others {
+		kept = append(kept, *agg)
+	}
+	sort.SliceStable(kept, func(i, j int) bool {
+		return kept[i].BucketUnix < kept[j].BucketUnix
+	})
+	return kept, nil
+}
+
+// GetStatistics returns the full statistics payload: totals + time series + trend series + four dimension distributions.
+func GetStatistics(filter StatsFilter, granularity string, trendDimension string) (StatisticsResult, error) {
 	result := StatisticsResult{
-		Distributions: map[string][]DistributionRow{},
-		Granularity:   normalizeGranularity(granularity, filter.StartUnix, filter.EndUnix),
+		TrendDimension: normalizeTrendDimension(trendDimension),
+		Distributions:  map[string][]DistributionRow{},
+		Granularity:    normalizeGranularity(granularity, filter.StartUnix, filter.EndUnix),
 	}
 
 	totals, err := GetStatisticsTotals(filter)
@@ -310,6 +449,12 @@ func GetStatistics(filter StatsFilter, granularity string) (StatisticsResult, er
 		return result, err
 	}
 	result.TimeSeries = series
+
+	trendSeries, err := GetStatisticsTrendSeries(filter, result.Granularity, result.TrendDimension)
+	if err != nil {
+		return result, err
+	}
+	result.TrendSeries = trendSeries
 
 	for _, dim := range []string{"user", "token", "channel", "model"} {
 		rows, derr := GetStatisticsDistribution(filter, dim, 10)

@@ -23,6 +23,8 @@ export type StatsMetric = 'cost' | 'tokens' | 'calls'
 
 export type StatsDimension = 'user' | 'token' | 'channel' | 'model'
 
+export type StatsTrendDimension = 'total' | StatsDimension
+
 export interface StatsTotals {
   quota: number
   prompt_tokens: number
@@ -43,6 +45,12 @@ export interface StatsBucket {
   failure_count: number
 }
 
+export interface StatsTrendBucket extends StatsBucket {
+  dimension: string
+  key: string
+  label: string
+}
+
 export interface DistributionRow {
   label: string
   key: string
@@ -57,6 +65,8 @@ export interface DistributionRow {
 export interface StatisticsData {
   totals: StatsTotals
   time_series: StatsBucket[]
+  trend_series: StatsTrendBucket[]
+  trend_dimension: StatsTrendDimension
   distributions: Partial<Record<StatsDimension, DistributionRow[]>>
   granularity: StatsGranularity
 }

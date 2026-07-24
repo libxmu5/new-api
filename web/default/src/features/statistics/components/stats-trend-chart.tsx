@@ -23,14 +23,28 @@ import { useTheme } from '@/context/theme-provider'
 import { VCHART_OPTION } from '@/lib/vchart'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { buildTrendSpec } from '../lib/charts'
-import type { StatsBucket, StatsMetric } from '../types'
+import { buildTrendDimensionSpec, buildTrendSpec } from '../lib/charts'
+import type {
+  StatsBucket,
+  StatsMetric,
+  StatsTrendBucket,
+  StatsTrendDimension,
+} from '../types'
 
 const METRIC_TABS: Array<{ value: StatsMetric; labelKey: string }> = [
   { value: 'cost', labelKey: 'Cost' },
   { value: 'tokens', labelKey: 'Tokens' },
   { value: 'calls', labelKey: 'Calls' },
 ]
+
+const DIMENSION_TABS: Array<{ value: StatsTrendDimension; labelKey: string }> =
+  [
+    { value: 'total', labelKey: 'Total' },
+    { value: 'user', labelKey: 'User' },
+    { value: 'token', labelKey: 'API Key' },
+    { value: 'channel', labelKey: 'Channel' },
+    { value: 'model', labelKey: 'Model' },
+  ]
 
 const CHART_TYPE_TABS = [
   { value: 'bar', labelKey: 'Bar Chart' },
@@ -39,15 +53,34 @@ const CHART_TYPE_TABS = [
 
 interface StatsTrendChartProps {
   series: StatsBucket[]
+  trendSeries: StatsTrendBucket[]
+  dimension: StatsTrendDimension
+  onDimensionChange: (dimension: StatsTrendDimension) => void
+  isAdmin: boolean
   loading: boolean
 }
 
-export function StatsTrendChart({ series, loading }: StatsTrendChartProps) {
+export function StatsTrendChart({
+  series,
+  trendSeries,
+  dimension,
+  onDimensionChange,
+  isAdmin,
+  loading,
+}: StatsTrendChartProps) {
   const { t } = useTranslation()
   const { resolvedTheme } = useTheme()
   const [metric, setMetric] = useState<StatsMetric>('cost')
   const [chartType, setChartType] = useState<'bar' | 'area'>('bar')
   const [themeReady, setThemeReady] = useState(false)
+
+  const visibleDimensionTabs = useMemo(
+    () =>
+      DIMENSION_TABS.filter(
+        (tab) => isAdmin || (tab.value !== 'user' && tab.value !== 'channel')
+      ),
+    [isAdmin]
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -66,14 +99,64 @@ export function StatsTrendChart({ series, loading }: StatsTrendChartProps) {
   }, [resolvedTheme])
 
   const spec = useMemo(() => {
-    if (series.length === 0) return null
-    return buildTrendSpec({ series, metric, chartType, t })
-  }, [series, metric, chartType, t])
+    if (dimension === 'total') {
+      if (series.length === 0) return null
+      return buildTrendSpec({ series, metric, chartType, t })
+    }
+    if (trendSeries.length === 0) return null
+    return buildTrendDimensionSpec({ series: trendSeries, metric, chartType, t })
+  }, [series, trendSeries, dimension, metric, chartType, t])
+
+  let chartContent = null
+  if (loading || !themeReady) {
+    chartContent = <Skeleton className='h-[340px] w-full' />
+  } else if (spec == null) {
+    chartContent = <TrendEmptyState message={t('No data available')} />
+  } else {
+    chartContent = (
+      <VChart
+        key={[
+          dimension,
+          metric,
+          chartType,
+          series.length,
+          trendSeries.length,
+          resolvedTheme,
+        ].join('-')}
+        spec={{
+          ...spec,
+          theme: resolvedTheme === 'dark' ? 'dark' : 'light',
+          background: 'transparent',
+        }}
+        option={VCHART_OPTION}
+      />
+    )
+  }
 
   return (
     <div className='overflow-hidden rounded-lg border'>
       <div className='flex flex-wrap items-center justify-between gap-2 border-b px-4 py-3 sm:px-5'>
-        <h3 className='text-sm font-semibold'>{t('Usage Trend')}</h3>
+        <div className='flex flex-wrap items-center gap-2'>
+          <h3 className='text-sm font-semibold'>{t('Usage Trend')}</h3>
+          <Tabs
+            value={dimension}
+            onValueChange={(value) =>
+              onDimensionChange(value as StatsTrendDimension)
+            }
+          >
+            <TabsList className='h-8'>
+              {visibleDimensionTabs.map((tab) => (
+                <TabsTrigger
+                  key={tab.value}
+                  value={tab.value}
+                  className='px-2.5 text-xs'
+                >
+                  {t(tab.labelKey)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+        </div>
         <div className='flex flex-wrap items-center gap-2'>
           <Tabs
             value={metric}
@@ -109,25 +192,15 @@ export function StatsTrendChart({ series, loading }: StatsTrendChartProps) {
           </Tabs>
         </div>
       </div>
-      <div className='min-h-[340px] p-2'>
-        {loading || !themeReady ? (
-          <Skeleton className='h-[340px] w-full' />
-        ) : spec == null ? (
-          <div className='text-muted-foreground flex h-[340px] items-center justify-center text-sm'>
-            {t('No data available')}
-          </div>
-        ) : (
-          <VChart
-            key={[metric, chartType, series.length, resolvedTheme].join('-')}
-            spec={{
-              ...spec,
-              theme: resolvedTheme === 'dark' ? 'dark' : 'light',
-              background: 'transparent',
-            }}
-            option={VCHART_OPTION}
-          />
-        )}
-      </div>
+      <div className='min-h-[340px] p-2'>{chartContent}</div>
+    </div>
+  )
+}
+
+function TrendEmptyState({ message }: { message: string }) {
+  return (
+    <div className='text-muted-foreground flex h-[340px] items-center justify-center text-sm'>
+      {message}
     </div>
   )
 }

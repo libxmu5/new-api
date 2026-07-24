@@ -72,7 +72,8 @@ func parseStatsFilter(c *gin.Context) model.StatsFilter {
 func GetLogStatistics(c *gin.Context) {
 	filter := parseStatsFilter(c)
 	granularity := c.DefaultQuery("granularity", "")
-	result, err := model.GetStatistics(filter, granularity)
+	trendDimension := c.DefaultQuery("trend_dimension", "total")
+	result, err := model.GetStatistics(filter, granularity, trendDimension)
 	if err != nil {
 		common.ApiError(c, err)
 		return
@@ -94,12 +95,16 @@ func GetLogSelfStatistics(c *gin.Context) {
 		filter.UserIDs = []int{-1}
 	}
 	granularity := c.DefaultQuery("granularity", "")
-	result, err := model.GetStatistics(filter, granularity)
+	// Regular users must not see channel information (consistent with log views).
+	trendDimension := c.DefaultQuery("trend_dimension", "total")
+	if trendDimension == "channel" {
+		trendDimension = "total"
+	}
+	result, err := model.GetStatistics(filter, granularity, trendDimension)
 	if err != nil {
 		common.ApiError(c, err)
 		return
 	}
-	// Regular users must not see channel information (consistent with log views).
 	delete(result.Distributions, "channel")
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
